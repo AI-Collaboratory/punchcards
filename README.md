@@ -13,3 +13,11 @@ to the card interpretation:
 1. Verify punch card image based on crop region proportions. Is this an IBM card?
 1. Detect the missing corner and flip card image to place it top-left.
 1. Call existing Michael Hamilton's adapted PunchCard class.
+
+## TODO
+* Has trouble cropping this image file vertically:
+```
+from punchcards import read_card
+>>> print(read_card('images/C04D01L-0001.tif'))
+```
+* Needs testing as a package, clearer API

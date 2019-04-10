@@ -49,26 +49,38 @@ def normalizeFlip(orig_img):
     return best_flip
 
 def cropCard(im):
-    pix = numpy.array(im)
-    v_sums = numpy.sum(pix, axis=0)
-    top, bottom = findMargins(v_sums)
-    h_sums = numpy.sum(pix, axis=1)
-    left, right = findMargins(h_sums)
-    box = (top, left, bottom, right)
-    return im.crop(box)
+    # crop along X axis
+    left, right = findMargins(im, axis=0)
+    # box is: L, T, R, B
+    x_crop_box = (left, 0, right, im.size[1]-1)
+    x_cropped = im.crop(x_crop_box)
+    # x_cropped.show()
+
+    # crop along Y axis
+    top, bottom = findMargins(x_cropped, axis=1)
+    y_crop_box = (0, top, x_cropped.size[0]-1, bottom)
+    result = x_cropped.crop(y_crop_box)
+    result.show()
+    return result
 
 # Find the index values where dark region begins and ends
-def findMargins(vector):
-    first = -1
-    last = -1
-    avg = numpy.average(vector)
-    for i in range(0, len(vector)):
-        if(vector[i] < avg):
+def findMargins(im, axis=0, threshold=.2):
+    pix = numpy.array(im)
+    max = im.size[axis]*255
+    max = max - int(max*threshold)
+    vector = numpy.sum(pix, axis=axis)
+    first = 0
+    last = len(vector)-1
+    #threshold = numpy.average(vector)
+    #threshold = int(numpy.average(vector)/2)
+    #threshold = 100
+    for i in range(0, len(vector)-1):
+        if(vector[i] < max):
             first = i-1
             break
-    for i in range(0, len(vector)):
-        if(vector[len(vector)-i-1] < avg):
-            last = len(vector)-i+1
+    for i in range(0, len(vector)-1):
+        if(vector[len(vector)-1-i] < max):
+            last = len(vector)-i
             break
     return (first, last)
 
@@ -95,10 +107,10 @@ def read_card(image_file):
     if(isnotbacklit(image)):
         image = ImageOps.invert(image)
     image = cropCard(image)
+    #image.show()
     if(image.size[1] > image.size[0]):
         image = image.transpose(Image.ROTATE_90)
     image = normalizeFlip(image)
-    image.show()
     card = PunchCard(image, bright=127)
     return card.text
 

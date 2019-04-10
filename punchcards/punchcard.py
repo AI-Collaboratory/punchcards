@@ -96,7 +96,7 @@ class PunchCard(object):
 
     # For highlighting on the debug dump
     def _flip(self, pixel):
-        return max(pixel)
+        return pixel
 
     # The search is started from the "crop" edges.
     # Either use crop boundary of the image size or the valyes supplied
@@ -174,10 +174,10 @@ class PunchCard(object):
         #print col_width
         if self.debug:
             # mark left and right edges on the copy
-            for y in range(probe_y - self.ysize/100, probe_y + self.ysize/100):
+            for y in range(int(probe_y) - int(self.ysize/100), int(probe_y) + int(self.ysize/100)):
                 self.debug_pix[left_border if left_border > 0 else 0,y] = 255
                 self.debug_pix[right_border if right_border < self.xmax else self.xmax - 1,y] = 255
-            for x in range(1, (self.xmax - self.xmin) / 200):
+            for x in range(1, int((self.xmax - self.xmin) / 200)):
                 self.debug_pix[left_border + x, probe_y] = 255
                 self.debug_pix[right_border - x, probe_y] = 255
 
@@ -209,7 +209,7 @@ class PunchCard(object):
                 self.debug_pix[x,bottom_border] = 255
         if self.debug:
             # mark search parameters
-            for x in range(self.midx - self.xsize/20, self.midx + self.xsize/20):
+            for x in range(self.midx - int(self.xsize/20), self.midx + int(self.xsize/20)):
                self.debug_pix[x,self.ymin] = 255
                self.debug_pix[x,self.ymax - 1] = 255
             for y in range(0, self.ymin):
