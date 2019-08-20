@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name="punchcards",
-      version='0.2.0',
+      version='0.3.0',
       description='Punch Card Reader',
       url='http://github.com/UMD-DCIC/punchcards',
       author='Gregory N. Jansen',
