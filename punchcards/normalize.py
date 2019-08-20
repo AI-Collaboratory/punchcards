@@ -17,6 +17,12 @@ import numpy
 import logging
 from .punchcard import PunchCard
 
+CARD_WIDTH = 7.0 + 3.0/8.0 # Inches
+CARD_HEIGHT = 3.25 # Inches
+CARD_SPEC_TOLERANCE = .15  # inches, adjust as needed
+CARD_W_TO_H_RATIO_HIGH = (CARD_WIDTH + CARD_SPEC_TOLERANCE) / CARD_HEIGHT
+CARD_W_TO_H_RATIO_LOW = (CARD_WIDTH - CARD_SPEC_TOLERANCE) / CARD_HEIGHT
+
 logger = logging.getLogger('punchcard')
 
 def example():
@@ -33,22 +39,27 @@ def example():
     print("Card Text:"+card.text)
 
 # Identify the lightest corner and place it top-left
-def normalizeFlip(orig_img):
+def normalizeFlip(orig_img, cropped_img):
     testbox = (0,0,20,20)
     brightest = -1
-    test_img = orig_img
-    best_flip = test_img
+    test_img = cropped_img
+    best_flip = (0,0)
     for (x,y), value in numpy.ndenumerate(numpy.zeros((2,2))):
         if x:
-            test_img = orig_img.transpose(Image.FLIP_LEFT_RIGHT)
+            test_img = cropped_img.transpose(Image.FLIP_LEFT_RIGHT)
         if y:
             test_img = test_img.transpose(Image.FLIP_TOP_BOTTOM)
         # test_img.show()
         b = brightness(test_img.crop(testbox))
         if b > brightest:
             brightest = b
-            best_flip = test_img
-    return best_flip
+            best_flip = (x,y)
+    result = orig_img
+    if best_flip[0]:
+        result = result.transpose(Image.FLIP_LEFT_RIGHT)
+    if best_flip[1]:
+        result = result.transpose(Image.FLIP_TOP_BOTTOM)
+    return result
 
 def cropCard(im):
     # crop along X axis
@@ -62,13 +73,12 @@ def cropCard(im):
     top, bottom = findMargins(x_cropped, axis=1)
     y_crop_box = (0, top, x_cropped.size[0]-1, bottom)
     result = x_cropped.crop(y_crop_box)
-    result.show()
     return result
 
 # Find the index values where dark region begins and ends
 def findMargins(im, axis=0, threshold=.2):
     pix = numpy.array(im)
-    max = im.size[axis]*255
+    max = pix.shape[axis]*255
     max = max - int(max*threshold)
     vector = numpy.sum(pix, axis=axis)
     first = 0
@@ -103,16 +113,41 @@ def brightness( im ):
     stat = ImageStat.Stat(im)
     return stat.mean[0]
 
+def combine_images( imgs ):
+    imgs = [i.convert(mode="RGB") for i in imgs]
+    max_width = sorted( [(i.size[0]) for i in imgs])[-1]
+    diagnostic = numpy.vstack( (numpy.asarray( i.resize( (max_width, i.size[1]*max_width/i.size[0])) ) for i in imgs ) )
+    return Image.fromarray( diagnostic, mode="RGB" )
+
+def is_card_dimensions(image):
+    card_ratio = float(image.size[0]) / float(image.size[1])
+    print(str(card_ratio))
+    print(str(CARD_W_TO_H_RATIO_HIGH) + " to " + str(CARD_W_TO_H_RATIO_LOW))
+    return card_ratio <= CARD_W_TO_H_RATIO_HIGH and card_ratio > CARD_W_TO_H_RATIO_LOW
+
 def find_card(image):
-    image = image.convert(mode="L")
-    if(isnotbacklit(image)):
-        image = ImageOps.invert(image)
-    image = cropCard(image)
+    image2 = image.convert(mode="L")
+    diag = combine_images([image, image2])
+    image3 = image2
+    if(isnotbacklit(image2)):
+        image3 = ImageOps.invert(image2)
+    diag = combine_images([diag, image3])
+    cropped = cropCard(image3)
+    diag = combine_images([diag, cropped])
     #image.show()
-    if(image.size[1] > image.size[0]):
-        image = image.transpose(Image.ROTATE_90)
-    image = normalizeFlip(image)
-    return image
+    image4 = image3
+    if(cropped.size[1] > cropped.size[0]):
+        print('rotate 90')
+        image4 = image3.transpose(Image.ROTATE_90)
+        cropped = cropped.transpose(Image.ROTATE_90)
+    if not is_card_dimensions(cropped):
+        return None
+    diag = combine_images([diag, image4])
+    image5 = normalizeFlip(image4, cropped)
+    diag = combine_images([diag, image5])
+    if logger.isEnabledFor(logging.DEBUG):
+        diag.show()
+    return image5
 
 if __name__ == '__main__':
     example()

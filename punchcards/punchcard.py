@@ -15,6 +15,8 @@ class PunchCard(object):
 
     logger = logging.getLogger('punchcard')
 
+    SPEC_IBM_MODEL_029 = "IBM Model 029 Punch Card"  # only one for now
+
     CARD_COLUMNS = 80
     CARD_ROWS = 12
 
@@ -70,7 +72,7 @@ class PunchCard(object):
                 self.translate[tuple(v[1:])] = v[0]
 
     # generate a range of floats
-    def drange(start, stop, step=1.0):
+    def drange(self, start, stop, step=1.0):
         r = start
         while (step >= 0.0 and r < stop) or (step < 0.0 and r > stop):
             yield r
@@ -82,7 +84,6 @@ class PunchCard(object):
         self.text = ''
         self.decoded = []
         self.surface = []
-        self.debug = debug
         self.threshold = 0
         self.ymin = ystart
         self.ymax = ystop
@@ -92,6 +93,10 @@ class PunchCard(object):
         self.image = image
         self.pix = image.load()
         self._crop()
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.WARN)
         self._scan(bright)
 
     # Brightness is the average of RGB values
@@ -111,8 +116,8 @@ class PunchCard(object):
             self.xmax = self.xsize
         if self.ymax == 0:
             self.ymax = self.ysize
-        self.midx = int(self.xmin + (self.xmax - self.xmin) / 2 + self.xadjust)
-        self.midy = int(self.ymin + (self.ymax - self.ymin) / 2)
+        self.midx = self.xmin + (self.xmax - self.xmin) / 2 + self.xadjust
+        self.midy = self.ymin + (self.ymax - self.ymin) / 2
 
     # heuristic for finding a reasonable cutoff brightness
     def _find_threshold_brightness(self):
@@ -173,9 +178,9 @@ class PunchCard(object):
         col_width = width * self.CARD_COL_WIDTH_RATIO
         hole_width = width * self.CARD_HOLE_WIDTH_RATIO
         #print col_width
-        if self.debug:
+        if self.logger.isEnabledFor(logging.DEBUG):
             # mark left and right edges on the copy
-            for y in range(int(probe_y) - int(self.ysize/100), int(probe_y) + int(self.ysize/100)):
+            for y in range(int(probe_y - self.ysize/100), int(probe_y + self.ysize/100)):
                 self.debug_pix[left_border if left_border > 0 else 0,y] = 255
                 self.debug_pix[right_border if right_border < self.xmax else self.xmax - 1,y] = 255
             for x in range(1, int((self.xmax - self.xmin) / 200)):
@@ -203,14 +208,14 @@ class PunchCard(object):
         hole_height = int(card_height * self.CARD_HOLE_HEIGHT_RATIO)
         data_top_y = data_begins + hole_height / 2
         col_height = int(card_height * self.CARD_ROW_HEIGHT_RATIO)
-        if self.debug:
+        if self.logger.isEnabledFor(logging.DEBUG):
             # mark up the copy with the edges
             for x in range(self.xmin, self.xmax-1):
                 self.debug_pix[x,top_border] = 255
                 self.debug_pix[x,bottom_border] = 255
-        if self.debug:
+        if self.logger.isEnabledFor(logging.DEBUG):
             # mark search parameters
-            for x in range(self.midx - int(self.xsize/20), self.midx + int(self.xsize/20)):
+            for x in range(self.midx - self.xsize/20, self.midx + self.xsize/20):
                self.debug_pix[x,self.ymin] = 255
                self.debug_pix[x,self.ymax - 1] = 255
             for y in range(0, self.ymin):
@@ -220,7 +225,7 @@ class PunchCard(object):
         return data_top_y, data_top_y + col_height * 11, col_height, hole_height
 
     def _scan(self, bright=-1):
-        if self.debug:
+        if self.logger.isEnabledFor(logging.DEBUG):
             # if debugging make a copy we can draw on
             self.debug_image = self.image.copy()
             self.debug_pix = self.debug_image.load()
@@ -243,7 +248,7 @@ class PunchCard(object):
                 if val >= self.threshold:
                     if left_edge == -1:
                         left_edge = x
-                    if self.debug:
+                    if self.logger.isEnabledFor(logging.DEBUG):
                         self.debug_pix[x,y] = self._flip(self.pix[x,y])
                 else:
                     if left_edge > -1:
@@ -252,22 +257,22 @@ class PunchCard(object):
                             col_num = int((left_edge + hole_length / 2.0 - x_data_left) / col_width + 0.25)
                             data[(col_num, row_num)] = hole_length
                         left_edge = -1
-            if (self.debug):
+            if self.logger.isEnabledFor(logging.DEBUG):
                 # Plot where holes might be on this row
                 expected_top_edge = y - hole_height / 2
                 expected_bottom_edge = y + hole_height / 2
                 blue = 255 * 256 * 256
-                for expected_left_edge in drange(x_data_left, x_data_right - 1, col_width):
-                    for y_plot in drange(expected_top_edge, expected_bottom_edge, 2):
+                for expected_left_edge in self.drange(x_data_left, x_data_right - 1, col_width):
+                    for y_plot in self.drange(expected_top_edge, expected_bottom_edge, 2):
                         self.debug_pix[expected_left_edge,y_plot] = blue
                         #self.debug_pix[x + hole_width/2,yline] = 255 * 256 * 256
                         self.debug_pix[expected_left_edge + hole_width,y_plot] = blue
-                    for x_plot in drange(expected_left_edge, expected_left_edge + hole_width):
+                    for x_plot in self.drange(expected_left_edge, expected_left_edge + hole_width):
                         self.debug_pix[x_plot, expected_top_edge] = blue
                         self.debug_pix[x_plot, expected_bottom_edge] = blue
             y += col_height
 
-        if self.debug:
+        if self.logger.isEnabledFor(logging.DEBUG):
             self.debug_image.show()
             # prevent run-a-way debug shows causing my desktop to run out of memory
             raw_input("Press Enter to continue...")

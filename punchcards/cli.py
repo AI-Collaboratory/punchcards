@@ -1,8 +1,19 @@
 from .punchcard import PunchCard
+from .normalize import find_card
+from PIL import Image
 from docopt import docopt
+import logging
+
+__doc_opt__ = """Punchcard Command Line Interface.
+
+Usage:
+  punchcard <image-file> ...
+  punchcard (-h | --help)
+  punchcard --version
+"""
 
 if __name__ == '__main__':
-    args = docopt(__doc__, version='Punch Card Reader 1.0')
+    args = docopt(__doc_opt__, version='Punch Card Reader 1.0')
 
     logger = logging.getLogger('punchcard')
     logger.setLevel(logging.WARN)
@@ -20,4 +31,4 @@ if __name__ == '__main__':
         image = find_card(image)
         image.show()
         card = PunchCard(image, bright=127) # using neutral gray as threshold color
-        return card.text
+        print(card.text)
