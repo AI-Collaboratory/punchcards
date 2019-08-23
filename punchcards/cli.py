@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from .punchcard import PunchCard
 from .normalize import find_card
 from PIL import Image
@@ -13,6 +14,9 @@ Usage:
 """
 
 if __name__ == '__main__':
+    main()
+
+def main():
     args = docopt(__doc_opt__, version='Punch Card Reader 1.0')
 
     logger = logging.getLogger('punchcard')
@@ -26,9 +30,10 @@ if __name__ == '__main__':
         logger.setLevel(logging.DEBUG)
 
     for item in args['<image-file>']:
-        image = Image.open(item)
-        image.show()
-        image = find_card(image)
-        image.show()
-        card = PunchCard(image, bright=127) # using neutral gray as threshold color
-        print(card.text)
+        im = Image.open(item)
+        im = find_card(im)
+        if im is not None:
+            card = PunchCard(im, bright=127, debug=False)
+            print(card.text)
+        else:
+            print('Not a punchcard.')

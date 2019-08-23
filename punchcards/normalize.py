@@ -116,13 +116,12 @@ def brightness( im ):
 def combine_images( imgs ):
     imgs = [i.convert(mode="RGB") for i in imgs]
     max_width = sorted( [(i.size[0]) for i in imgs])[-1]
-    diagnostic = numpy.vstack( (numpy.asarray( i.resize( (max_width, i.size[1]*max_width/i.size[0])) ) for i in imgs ) )
+    imgs = [ i.resize((max_width, int(i.size[1]*max_width/i.size[0]))) for i in imgs ]
+    diagnostic = numpy.vstack( imgs )
     return Image.fromarray( diagnostic, mode="RGB" )
 
 def is_card_dimensions(image):
     card_ratio = float(image.size[0]) / float(image.size[1])
-    print(str(card_ratio))
-    print(str(CARD_W_TO_H_RATIO_HIGH) + " to " + str(CARD_W_TO_H_RATIO_LOW))
     return card_ratio <= CARD_W_TO_H_RATIO_HIGH and card_ratio > CARD_W_TO_H_RATIO_LOW
 
 def find_card(image):
@@ -137,7 +136,6 @@ def find_card(image):
     #image.show()
     image4 = image3
     if(cropped.size[1] > cropped.size[0]):
-        print('rotate 90')
         image4 = image3.transpose(Image.ROTATE_90)
         cropped = cropped.transpose(Image.ROTATE_90)
     if not is_card_dimensions(cropped):

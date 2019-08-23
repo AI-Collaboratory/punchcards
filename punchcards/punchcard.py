@@ -10,35 +10,35 @@ import sys
 from optparse import OptionParser
 import logging
 
+SPEC_IBM_MODEL_029 = "IBM Model 029 Punch Card"  # only one for now
+
+CARD_COLUMNS = 80
+CARD_ROWS = 12
+
+# found measurements at http://www.quadibloc.com/comp/cardint.htm
+CARD_WIDTH = 7.0 + 3.0/8.0 # Inches
+CARD_HEIGHT = 3.25 # Inches
+CARD_COL_WIDTH = 0.087 # Inches
+CARD_HOLE_WIDTH = 0.055 # Inches IBM, 0.056 Control Data
+CARD_ROW_HEIGHT = 0.25 # Inches
+CARD_HOLE_HEIGHT = 0.125 # Inches
+CARD_TOPBOT_MARGIN = 3.0/16.0 # Inches at top and bottom
+CARD_SIDE_MARGIN = 0.2235 # Inches on each side
+
+CARD_SIDE_MARGIN_RATIO = CARD_SIDE_MARGIN/CARD_WIDTH # as proportion of card width (margin/width)
+CARD_TOP_MARGIN_RATIO = CARD_TOPBOT_MARGIN/CARD_HEIGHT # as proportion of card height (margin/height)
+CARD_ROW_HEIGHT_RATIO = CARD_ROW_HEIGHT/CARD_HEIGHT # as proportion of card height - works
+CARD_COL_WIDTH_RATIO = CARD_COL_WIDTH/CARD_WIDTH # as proportion of card height - works
+CARD_HOLE_HEIGHT_RATIO = CARD_HOLE_HEIGHT/CARD_HEIGHT # as proportion of card height - works
+CARD_HOLE_WIDTH_RATIO = CARD_HOLE_WIDTH/CARD_WIDTH # as a proportion of card width
+
+BRIGHTNESS_THRESHOLD = 200  # pixel brightness value (i.e. (R+G+B)/3)
+
+
 # Represents a punchcard image plus scanned data
 class PunchCard(object):
 
     logger = logging.getLogger('punchcard')
-
-    SPEC_IBM_MODEL_029 = "IBM Model 029 Punch Card"  # only one for now
-
-    CARD_COLUMNS = 80
-    CARD_ROWS = 12
-
-    # found measurements at http://www.quadibloc.com/comp/cardint.htm
-    CARD_WIDTH = 7.0 + 3.0/8.0 # Inches
-    CARD_HEIGHT = 3.25 # Inches
-    CARD_COL_WIDTH = 0.087 # Inches
-    CARD_HOLE_WIDTH = 0.055 # Inches IBM, 0.056 Control Data
-    CARD_ROW_HEIGHT = 0.25 # Inches
-    CARD_HOLE_HEIGHT = 0.125 # Inches
-    CARD_TOPBOT_MARGIN = 3.0/16.0 # Inches at top and bottom
-    CARD_SIDE_MARGIN = 0.2235 # Inches on each side
-
-
-    CARD_SIDE_MARGIN_RATIO = CARD_SIDE_MARGIN/CARD_WIDTH # as proportion of card width (margin/width)
-    CARD_TOP_MARGIN_RATIO = CARD_TOPBOT_MARGIN/CARD_HEIGHT # as proportion of card height (margin/height)
-    CARD_ROW_HEIGHT_RATIO = CARD_ROW_HEIGHT/CARD_HEIGHT # as proportion of card height - works
-    CARD_COL_WIDTH_RATIO = CARD_COL_WIDTH/CARD_WIDTH # as proportion of card height - works
-    CARD_HOLE_HEIGHT_RATIO = CARD_HOLE_HEIGHT/CARD_HEIGHT # as proportion of card height - works
-    CARD_HOLE_WIDTH_RATIO = CARD_HOLE_WIDTH/CARD_WIDTH # as a proportion of card width
-
-    BRIGHTNESS_THRESHOLD = 200  # pixel brightness value (i.e. (R+G+B)/3)
 
     IBM_MODEL_029_KEYPUNCH = """
         /&-0123456789ABCDEFGHIJKLMNOPQR/STUVWXYZ:#@'="`.<(+|!$*);^~,%_>? |
@@ -171,13 +171,12 @@ class PunchCard(object):
                 right_border = x
                 break
         width = right_border - left_border
-        card_side_margin_width = int(width * self.CARD_SIDE_MARGIN_RATIO)
+        card_side_margin_width = int(width * CARD_SIDE_MARGIN_RATIO)
         data_left_x = left_border + card_side_margin_width
         #data_right_x = right_border - card_side_margin_width
-        data_right_x = data_left_x + int((self.CARD_COLUMNS * width) * self.CARD_COL_WIDTH/self.CARD_WIDTH)
-        col_width = width * self.CARD_COL_WIDTH_RATIO
-        hole_width = width * self.CARD_HOLE_WIDTH_RATIO
-        #print col_width
+        data_right_x = data_left_x + int((CARD_COLUMNS * width) * CARD_COL_WIDTH/CARD_WIDTH)
+        col_width = width * CARD_COL_WIDTH_RATIO
+        hole_width = width * CARD_HOLE_WIDTH_RATIO
         if self.logger.isEnabledFor(logging.DEBUG):
             # mark left and right edges on the copy
             for y in range(int(probe_y - self.ysize/100), int(probe_y + self.ysize/100)):
@@ -194,7 +193,6 @@ class PunchCard(object):
     def _find_data_vert_dimensions(self):
         top_border, bottom_border = self.ymin, self.ymax
         for y in range(self.ymin, self.midy):
-            #print pix[midx,  y][0]
             if self._brightness(self.pix[self.midx,  y]) < self.threshold:
                 top_border = y
                 break
@@ -203,11 +201,11 @@ class PunchCard(object):
                 bottom_border = y
                 break
         card_height = bottom_border - top_border
-        card_top_margin = int(card_height * self.CARD_TOP_MARGIN_RATIO)
+        card_top_margin = int(card_height * CARD_TOP_MARGIN_RATIO)
         data_begins = top_border + card_top_margin
-        hole_height = int(card_height * self.CARD_HOLE_HEIGHT_RATIO)
+        hole_height = int(card_height * CARD_HOLE_HEIGHT_RATIO)
         data_top_y = data_begins + hole_height / 2
-        col_height = int(card_height * self.CARD_ROW_HEIGHT_RATIO)
+        col_height = int(card_height * CARD_ROW_HEIGHT_RATIO)
         if self.logger.isEnabledFor(logging.DEBUG):
             # mark up the copy with the edges
             for x in range(self.xmin, self.xmax-1):
@@ -238,8 +236,8 @@ class PunchCard(object):
         # Chads are narrow so find then heuristically by accumulating pixel brightness
         # along the row.  Should be forgiving if the image is slightly wonky.
         y = y_data_pos #- col_height/8
-        for row_num in range(self.CARD_ROWS):
-            probe_y = y + col_height if row_num == 0 else ( y - col_height if row_num == self.CARD_ROWS -1 else y )  # Line 0 has a corner missing
+        for row_num in range(CARD_ROWS):
+            probe_y = y + col_height if row_num == 0 else ( y - col_height if row_num == CARD_ROWS -1 else y )  # Line 0 has a corner missing
             x_data_left, x_data_right,  col_width, hole_width = self._find_data_horiz_dimensions(probe_y)
             left_edge = -1 # of a punch-hole
             for x in range(x_data_left,  x_data_right):
@@ -278,10 +276,10 @@ class PunchCard(object):
             raw_input("Press Enter to continue...")
         self.decoded = []
         # Could fold this loop into the previous one - but would it be faster?
-        for col in range(0, self.CARD_COLUMNS):
+        for col in range(0, CARD_COLUMNS):
             col_pattern = []
             col_surface = []
-            for row in range(self.CARD_ROWS):
+            for row in range(CARD_ROWS):
                 key = (col, row)
                 # avergage for 1/3 of a column is greater than the threshold
                 col_pattern.append('O' if key in data else ' ')
@@ -297,9 +295,9 @@ class PunchCard(object):
     # ASCII art image of card
     def dump(self, id, raw_data=False):
         print(' Card Dump of Image file:', id, 'Format', 'Raw' if raw_data else 'Dump', 'threshold=', self.threshold)
-        print(' ' + '123456789-' * (self.CARD_COLUMNS/10))
-        print(' ' + '_' * self.CARD_COLUMNS + ' ')
-        print('/' + self.text +  '_' * (self.CARD_COLUMNS - len(self.text)) + '|')
+        print(' ' + '123456789-' * (CARD_COLUMNS/10))
+        print(' ' + '_' * CARD_COLUMNS + ' ')
+        print('/' + self.text +  '_' * (CARD_COLUMNS - len(self.text)) + '|')
         for rnum in range(len(self.decoded[0])):
             sys.stdout.write('|')
             if raw_data:
@@ -309,17 +307,21 @@ class PunchCard(object):
                 for col in self.decoded:
                     sys.stdout.write(col[rnum] if col[rnum] == 'O' else '.')
             print('|')
-        print('`' + '-' * self.CARD_COLUMNS + "'")
-        print(' ' + '123456789-' * (self.CARD_COLUMNS/10))
+        print('`' + '-' * CARD_COLUMNS + "'")
+        print(' ' + '123456789-' * (CARD_COLUMNS/10))
         print('')
 
 
 if __name__ == '__main__':
+    main()
+
+
+def main():
     usage = """usage: %prog [options] image [image...]
     decode punch card image into ASCII."""
     parser = OptionParser(usage)
     parser.add_option('-b', '--bright-threshold', type='int', dest='bright', default=-1, help='Brightness (R+G+B)/3, e.g. 127.')
-    parser.add_option('-s', '--side-margin-ratio', type='float', dest='side_margin_ratio', default=self.CARD_SIDE_MARGIN_RATIO, help='Manually set side margin ratio (sideMargin/cardWidth).')
+    parser.add_option('-s', '--side-margin-ratio', type='float', dest='side_margin_ratio', default=CARD_SIDE_MARGIN_RATIO, help='Manually set side margin ratio (sideMargin/cardWidth).')
     parser.add_option('-d', '--dump', action='store_true', dest='dump', help='Output an ASCII-art version of the card.')
     parser.add_option('-i', '--display-image', action='store_true', dest='display', help='Display an anotated version of the image.')
     parser.add_option('-r', '--dump-raw', action='store_true', dest='dumpraw', help='Output ASCII-art with raw row/column accumulator values.')
