@@ -30,7 +30,8 @@ Usage:
   punchcard --version
 ```
 You should see the usage text printed to your console, as above.
-1. That's it.
+1. If you need to process TIFF format images, you ~may~ need to install the `libtiff` package for your system. Please see
+the details on the [Pillow site](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html?highlight=tiff#tiff).
 
 ## Example Usage
 Say you have a collection of punchcard scans or isometric digital photos, you can
