@@ -276,7 +276,7 @@ class PunchCard(object):
         if self.logger.isEnabledFor(logging.DEBUG):
             self.debug_image.show()
             # prevent run-a-way debug shows causing my desktop to run out of memory
-            raw_input("Press Enter to continue...")
+            self._input("Press Enter to continue...")
         self.decoded = []
         # Could fold this loop into the previous one - but would it be faster?
         for col in range(0, CARD_COLUMNS):
@@ -313,6 +313,14 @@ class PunchCard(object):
         print('`' + '-' * CARD_COLUMNS + "'")
         print(' ' + '123456789-' * (CARD_COLUMNS/10))
         print('')
+    
+
+    # simple shim for python 2/3 compatibility
+    def _input( self, prompt ):
+        try:
+            return raw_input( prompt )
+        except NameError:
+            return input( prompt)
 
 
 def main():
