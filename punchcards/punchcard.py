@@ -312,10 +312,6 @@ class PunchCard(object):
         print('')
 
 
-if __name__ == '__main__':
-    main()
-
-
 def main():
     usage = """usage: %prog [options] image [image...]
     decode punch card image into ASCII."""
@@ -340,3 +336,7 @@ def main():
             card.dump(arg)
         if (options.dumpraw):
             card.dump(arg, raw_data=True)
+
+
+if __name__ == '__main__':
+    main()
