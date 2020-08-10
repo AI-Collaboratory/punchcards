@@ -297,7 +297,7 @@ class PunchCard(object):
     # ASCII art image of card
     def dump(self, id, raw_data=False):
         print(' Card Dump of Image file:', id, 'Format', 'Raw' if raw_data else 'Dump', 'threshold=', self.threshold)
-        print(' ' + '123456789-' * (CARD_COLUMNS/10))
+        print(' ' + '123456789-' * int(CARD_COLUMNS/10))
         print(' ' + '_' * CARD_COLUMNS + ' ')
         print('/' + self.text +  '_' * (CARD_COLUMNS - len(self.text)) + '|')
         for rnum in range(len(self.decoded[0])):
@@ -310,7 +310,7 @@ class PunchCard(object):
                     sys.stdout.write(col[rnum] if col[rnum] == 'O' else '.')
             print('|')
         print('`' + '-' * CARD_COLUMNS + "'")
-        print(' ' + '123456789-' * (CARD_COLUMNS/10))
+        print(' ' + '123456789-' * int(CARD_COLUMNS/10))
         print('')
     
 
