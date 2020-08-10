@@ -116,8 +116,8 @@ class PunchCard(object):
             self.xmax = self.xsize
         if self.ymax == 0:
             self.ymax = self.ysize
-        self.midx = self.xmin + (self.xmax - self.xmin) / 2 + self.xadjust
-        self.midy = self.ymin + (self.ymax - self.ymin) / 2
+        self.midx = int(self.xmin + (self.xmax - self.xmin) / 2) + self.xadjust
+        self.midy = int( self.ymin + (self.ymax - self.ymin) / 2)
 
     # heuristic for finding a reasonable cutoff brightness
     def _find_threshold_brightness(self):
@@ -213,7 +213,7 @@ class PunchCard(object):
                 self.debug_pix[x,bottom_border] = 255
         if self.logger.isEnabledFor(logging.DEBUG):
             # mark search parameters
-            for x in range(self.midx - self.xsize/20, self.midx + self.xsize/20):
+            for x in range(self.midx - int(self.xsize/20), int(self.midx + self.xsize/20)):
                self.debug_pix[x,self.ymin] = 255
                self.debug_pix[x,self.ymax - 1] = 255
             for y in range(0, self.ymin):
@@ -273,7 +273,7 @@ class PunchCard(object):
         if self.logger.isEnabledFor(logging.DEBUG):
             self.debug_image.show()
             # prevent run-a-way debug shows causing my desktop to run out of memory
-            raw_input("Press Enter to continue...")
+            self._input("Press Enter to continue...")
         self.decoded = []
         # Could fold this loop into the previous one - but would it be faster?
         for col in range(0, CARD_COLUMNS):
@@ -295,7 +295,7 @@ class PunchCard(object):
     # ASCII art image of card
     def dump(self, id, raw_data=False):
         print(' Card Dump of Image file:', id, 'Format', 'Raw' if raw_data else 'Dump', 'threshold=', self.threshold)
-        print(' ' + '123456789-' * (CARD_COLUMNS/10))
+        print(' ' + '123456789-' * int(CARD_COLUMNS/10))
         print(' ' + '_' * CARD_COLUMNS + ' ')
         print('/' + self.text +  '_' * (CARD_COLUMNS - len(self.text)) + '|')
         for rnum in range(len(self.decoded[0])):
@@ -308,12 +308,16 @@ class PunchCard(object):
                     sys.stdout.write(col[rnum] if col[rnum] == 'O' else '.')
             print('|')
         print('`' + '-' * CARD_COLUMNS + "'")
-        print(' ' + '123456789-' * (CARD_COLUMNS/10))
+        print(' ' + '123456789-' * int(CARD_COLUMNS/10))
         print('')
+    
 
-
-if __name__ == '__main__':
-    main()
+    # simple shim for python 2/3 compatibility
+    def _input( self, prompt ):
+        try:
+            return raw_input( prompt )
+        except NameError:
+            return input( prompt)
 
 
 def main():
@@ -340,3 +344,7 @@ def main():
             card.dump(arg)
         if (options.dumpraw):
             card.dump(arg, raw_data=True)
+
+
+if __name__ == '__main__':
+    main()
