@@ -194,7 +194,6 @@ class PunchCard(object):
     # column and hole horizontal dimensions
     def _find_data_vert_dimensions(self):
         top_border, bottom_border = self.ymin, self.ymax
-        breakpoint()
         for y in range(self.ymin, self.midy):
             if self._brightness(self.pix[self.midx,  y]) < self.threshold:
                 top_border = y
