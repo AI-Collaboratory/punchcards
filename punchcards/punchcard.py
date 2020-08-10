@@ -10,6 +10,8 @@ import sys
 from optparse import OptionParser
 import logging
 
+import pdb
+
 SPEC_IBM_MODEL_029 = "IBM Model 029 Punch Card"  # only one for now
 
 CARD_COLUMNS = 80
@@ -116,8 +118,8 @@ class PunchCard(object):
             self.xmax = self.xsize
         if self.ymax == 0:
             self.ymax = self.ysize
-        self.midx = self.xmin + (self.xmax - self.xmin) / 2 + self.xadjust
-        self.midy = self.ymin + (self.ymax - self.ymin) / 2
+        self.midx = int(self.xmin + (self.xmax - self.xmin) / 2) + self.xadjust
+        self.midy = int( self.ymin + (self.ymax - self.ymin) / 2)
 
     # heuristic for finding a reasonable cutoff brightness
     def _find_threshold_brightness(self):
@@ -192,6 +194,7 @@ class PunchCard(object):
     # column and hole horizontal dimensions
     def _find_data_vert_dimensions(self):
         top_border, bottom_border = self.ymin, self.ymax
+        breakpoint()
         for y in range(self.ymin, self.midy):
             if self._brightness(self.pix[self.midx,  y]) < self.threshold:
                 top_border = y
@@ -213,7 +216,7 @@ class PunchCard(object):
                 self.debug_pix[x,bottom_border] = 255
         if self.logger.isEnabledFor(logging.DEBUG):
             # mark search parameters
-            for x in range(self.midx - self.xsize/20, self.midx + self.xsize/20):
+            for x in range(self.midx - int(self.xsize/20), int(self.midx + self.xsize/20)):
                self.debug_pix[x,self.ymin] = 255
                self.debug_pix[x,self.ymax - 1] = 255
             for y in range(0, self.ymin):
