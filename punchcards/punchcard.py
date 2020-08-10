@@ -10,8 +10,6 @@ import sys
 from optparse import OptionParser
 import logging
 
-import pdb
-
 SPEC_IBM_MODEL_029 = "IBM Model 029 Punch Card"  # only one for now
 
 CARD_COLUMNS = 80
