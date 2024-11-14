@@ -116,8 +116,8 @@ class PunchCard(object):
             self.xmax = self.xsize
         if self.ymax == 0:
             self.ymax = self.ysize
-        self.midx = self.xmin + (self.xmax - self.xmin) / 2 + self.xadjust
-        self.midy = self.ymin + (self.ymax - self.ymin) / 2
+        self.midx = int(self.xmin + (self.xmax - self.xmin) / 2 + self.xadjust)
+        self.midy = int(self.ymin + (self.ymax - self.ymin) / 2)
 
     # heuristic for finding a reasonable cutoff brightness
     def _find_threshold_brightness(self):
